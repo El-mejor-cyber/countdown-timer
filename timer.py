@@ -12,7 +12,7 @@ root.resizable(False, False)    # it helps to do not size the window
 heading = Label(root, text="Timer", font="arial 30 bold", bg="#2E2E2E",fg="#ea3548")
 heading.pack(pady=10)
 
-Label(root, font=("arial", 15, "bold"), text="current time:", bg="#2E2E2E", fg="#FFFFFF").place(x=65, y=70)
+Label(root, font=("arial", 15, "bold"), text="Current time:", bg="#2E2E2E", fg="#FFFFFF").place(x=65, y=70)
 
 
 def clock():
@@ -44,11 +44,15 @@ Label(root, text="sec", font="arial 12", bg="#2E2E2E", fg="#FFFFFF").place(x=345
 
 timer_running = False  # Flag to control the timer
 stop_flag = False  # Flag to signal a stop request
+paused = False  # Flag to control the pause state
+
 
 
 def Timer():
     global timer_running
     global stop_flag
+    global paused
+
     if not timer_running:
         try:
             times = int(hrs.get()) * 3600 + int(mins.get()) * 60 + int(sec.get())  # Conversion to total seconds
@@ -57,17 +61,22 @@ def Timer():
 
         timer_running = True
         stop_flag = False
+        paused = False  # Reset paused state when a new timer starts
+        pause_button.place(x=200, y=450)  # Show pause button
+        resume_button.place_forget()  # Hide resume button
 
-        def update_timer():
+
+        def update_timer(remaining_time):
             times = int(hrs.get()) * 3600 + int(mins.get()) * 60 + int(sec.get())
             global timer_running
             global stop_flag
+            global paused
             if stop_flag:
                 timer_running = False
                 return
 
-            while times > -1 and timer_running==True:
-                minute ,second=(times//60, times %60)
+            if not paused:
+                minute ,second=(remaining_time//60, remaining_time %60)
 
                 hour=0
                 if minute>60:
@@ -76,9 +85,8 @@ def Timer():
                 sec.set(str(second).zfill(2))
                 mins.set(str(minute).zfill(2))
                 hrs.set(str(hour).zfill(2))
-
-                root.update()
-                time.sleep(1)
+                if remaining_time>0:
+                    root.after(1000, update_timer, remaining_time - 1)
 
                 if(times==0):
                     timer_running = False
@@ -86,11 +94,14 @@ def Timer():
                     sec.set("00")
                     mins.set("00")
                     hrs.set("00")
+                    pause_button.place_forget() # Hide pause button when timer ends
+                    resume_button.place_forget() # Hide resume button when timer ends
         
-                times -= 1
-            
+            else:
+                root.after(100, update_timer, remaining_time) # Check again after 100 milliseconds
 
-        update_timer()
+
+        update_timer(times)
 
 
 def Stop():
@@ -101,24 +112,20 @@ def Stop():
     hrs.set("00")
     mins.set("00")
     sec.set("00")
+    
+def Pause():
+    global paused
+    paused = True
+    pause_button.place_forget() # Hide pause button
+    resume_button.place(x=200, y=450) # Show resume button
 
 
-def brush():
-    hrs.set("00")
-    mins.set("02")
-    sec.set("00")
+def Resume():
+    global paused
+    paused = False
+    resume_button.place_forget() # Hide resume button
+    pause_button.place(x=200, y=450) # Show pause button
 
-
-def face():
-    hrs.set("00")
-    mins.set("15")
-    sec.set("00")
-
-
-def eggs():
-    hrs.set("00")
-    mins.set("10")
-    sec.set("00")
 
 
 button = Button(root, text="Start", bg="#ea3548", bd =0,fg="#FFFFFF", width=20, height=2, font="arial 10 bold", command=Timer)
@@ -127,17 +134,11 @@ button.place(x=30, y=400)
 stop_button = Button(root, text="Stop", bg="#ea3548", bd=0, fg="#fff", width=20, height=2, font="arial 10 bold", command=Stop)
 stop_button.place(x=200, y=400)
 
+pause_button = Button(root, text="Pause", bg="#ea3548", bd=0, fg="#fff", width=20, height=2, font="arial 10 bold", command=Pause)
+pause_button.place_forget() # Initially placed below the Stop button, but will be hidden
 
-button1 = Button(root, text="brush, 2mins", bg="#2E2E2E",fg="#FFFFFF", bd=0, command=brush)
-button1.place(x=7, y=300)
-
-
-button2 = Button(root, text="face, 15mins", bg="#2E2E2E",bd=0,fg="#FFFFFF", command=face)
-button2.place(x=137, y=300)
-
-
-button3 = Button(root, text="eggs, 10mins", bg="#2E2E2E",bd=0,fg="#FFFFFF", command=eggs)
-button3.place(x=267, y=300)
+resume_button = Button(root, text="Resume", bg="#ea3548", bd=0, fg="#fff", width=20, height=2, font="arial 10 bold", command=Resume)
+resume_button.place_forget() # Initially hidden
 
 
 root.mainloop()
